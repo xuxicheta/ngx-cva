@@ -2,6 +2,8 @@
  * Public API Surface of ngx-cva
  */
 
-export * from './lib/ngx-cva.service';
-export * from './lib/ngx-cva.component';
-export * from './lib/ngx-cva.module';
+export * from './lib/ngx-cva';
+export * from './lib/append-to-object';
+export * from './lib/validator.provider';
+export * from './lib/value-accessor.provider';
+export * from './lib/ngx-cva.interface';
