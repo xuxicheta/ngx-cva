@@ -13,9 +13,9 @@ import { FormControl } from '@angular/forms';
 export class InputSampleComponent implements OnInit, NgxCVA {
   formControl = new FormControl();
 
-  constructor() { }
+  constructor() {
+  }
 
   ngOnInit(): void {
   }
-
 }

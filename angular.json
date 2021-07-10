@@ -24,7 +24,7 @@
         "test": {
           "builder": "@angular-builders/jest:run",
           "options": {
-            "tsConfig": "projects/ngx-cva/tsconfig.spec.json"
+            "tsConfig": "tsconfig.spec.json"
           }
         },
         "lint": {
@@ -112,21 +112,6 @@
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
             "browserTarget": "ngx-cva-demo:build"
-          }
-        },
-        "test": {
-          "builder": "@angular-builders/jest:run",
-          "options": {
-            "polyfills": "projects/ngx-cva-demo/src/polyfills.ts",
-            "tsConfig": "projects/ngx-cva-demo/tsconfig.spec.json",
-            "assets": [
-              "projects/ngx-cva-demo/src/favicon.ico",
-              "projects/ngx-cva-demo/src/assets"
-            ],
-            "styles": [
-              "projects/ngx-cva-demo/src/styles.css"
-            ],
-            "scripts": []
           }
         },
         "lint": {
