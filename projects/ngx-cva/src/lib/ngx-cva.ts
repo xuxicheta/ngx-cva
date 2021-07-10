@@ -1,25 +1,25 @@
-import { ChangeDetectorRef, InjectionToken, Provider } from '@angular/core';
+import { Provider } from '@angular/core';
 import { NG_VALIDATORS, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ValueAccessorProvider } from './value-accessor.provider';
 import { ValidatorProvider } from './validator.provider';
-
-const LINKED_CVA = new InjectionToken<boolean>('LINKED_CVA');
+import { LINKED_CVA } from './linked-cva.token';
 
 export function ngxCVA(linked = true): Provider[] {
-  return [{
-    provide: LINKED_CVA,
-    useValue: linked,
-  },
+  return [
+    {
+      provide: LINKED_CVA,
+      useValue: linked,
+    },
+    ValueAccessorProvider,
+    ValidatorProvider,
     {
       provide: NG_VALUE_ACCESSOR,
-      useClass: ValueAccessorProvider,
+      useExisting: ValueAccessorProvider,
       multi: true,
-      deps: [ChangeDetectorRef, LINKED_CVA],
     },
     {
       provide: NG_VALIDATORS,
-      useClass: ValidatorProvider,
+      useExisting: ValidatorProvider,
       multi: true,
-      deps: [ChangeDetectorRef, LINKED_CVA],
     }];
 }

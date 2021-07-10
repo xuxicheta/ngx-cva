@@ -1,18 +1,8 @@
-import { ChangeDetectorRef, EmbeddedViewRef, Injectable, Optional } from '@angular/core';
-import { AbstractControl, FormGroup, ValidationErrors, Validator } from '@angular/forms';
+import { ChangeDetectorRef, EmbeddedViewRef, Inject, Injectable, Optional } from '@angular/core';
+import { AbstractControl, FormArray, FormGroup, ValidationErrors, Validator } from '@angular/forms';
 import { NgxCVA } from './ngx-cva.interface';
 import { appendToObject } from './append-to-object';
-
-function formErrorsReducer(form: FormGroup): (acc: ValidationErrors, key: string) => ValidationErrors {
-  const controls = form.controls;
-
-  return (acc: ValidationErrors, key: string) => {
-    if (controls[key].errors !== null) {
-      return appendToObject(acc || {}, key, controls[key].errors);
-    }
-    return acc;
-  };
-}
+import { LINKED_CVA } from './linked-cva.token';
 
 @Injectable()
 export class ValidatorProvider implements Validator {
@@ -22,25 +12,62 @@ export class ValidatorProvider implements Validator {
 
   constructor(
     @Optional() private cdr: ChangeDetectorRef,
-    private linked: boolean,
+    @Optional() @Inject(LINKED_CVA) private linked: boolean,
   ) {
   }
 
-  validate(): ValidationErrors | null {
+  validate(x): ValidationErrors | null {
     if (!this.linked) {
       return null;
     }
 
-    if (this.formControl instanceof FormGroup) {
-      return {
-        ...this.formControl.errors,
-        ...Object.keys(this.formControl.controls).reduce(
-          formErrorsReducer(this.formControl),
-          null
-        ),
-      };
+    if (this.formControl instanceof FormArray) {
+      return this.collectErrorsOfFormArray(this.formControl)
     }
+
+    if (this.formControl instanceof FormGroup) {
+      return this.collectErrorsOfFormGroup(this.formControl);
+    }
+
     return this.formControl.errors;
+  }
+
+  private collectErrorsOfFormArray(formControl: FormArray): ValidationErrors | null {
+    let errors: ValidationErrors | null = null;
+
+    if (formControl.errors) {
+      errors = { ...this.formControl.errors};
+    }
+
+    const controlErrors = formControl.controls.map(ctrl => ctrl.errors);
+    if (controlErrors.some(Boolean)) {
+      errors = {
+        ...errors,
+        controlErrors,
+      }
+    }
+
+    return errors;
+  }
+
+  private collectErrorsOfFormGroup(formControl: FormGroup): ValidationErrors | null {
+    let errors: ValidationErrors | null = null;
+
+    if (formControl.errors) {
+      errors = { ...this.formControl.errors};
+    }
+
+    if (Object.values(formControl.controls).some(ctrl => ctrl.errors)) {
+      errors = {
+        ...errors,
+        controlErrors: Object.entries(formControl.controls).reduce(
+          (acc, [key, ctrl]) => appendToObject(acc, key, ctrl.errors),
+          {} as any,
+        )
+      }
+    }
+
+    return errors;
   }
 
 }

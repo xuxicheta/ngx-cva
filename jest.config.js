@@ -4,4 +4,5 @@ module.exports = {
   // },
   preset: 'jest-preset-angular',
   setupFilesAfterEnv: ['<rootDir>/setup-jest.ts'],
+  testRunner: 'jest-jasmine2',
 };

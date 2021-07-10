@@ -1,25 +1,24 @@
-import { AbstractControl, ControlValueAccessor } from '@angular/forms';
-import { BehaviorSubject, noop, Subscription } from 'rxjs';
-import { ChangeDetectorRef, EmbeddedViewRef, Injectable, OnDestroy, Optional } from '@angular/core';
+import { AbstractControl, ControlValueAccessor, FormArray, FormGroup } from '@angular/forms';
+import { noop, Subscription } from 'rxjs';
+import { ChangeDetectorRef, EmbeddedViewRef, Inject, Injectable, OnDestroy, Optional } from '@angular/core';
 import { NgxCVA } from './ngx-cva.interface';
+import { LINKED_CVA } from './linked-cva.token';
 
 @Injectable()
 export class ValueAccessorProvider<V = any> implements ControlValueAccessor, OnDestroy {
-  onChanges = new BehaviorSubject<object>({});
+  onChange: (v?: any) => void = noop;
+  onTouched: () => void = noop;
   private sub = new Subscription();
+
+  constructor(
+    @Optional() private cdr: ChangeDetectorRef,
+    @Optional() @Inject(LINKED_CVA) private linked: boolean,
+  ) {
+  }
 
   get formControl(): AbstractControl {
     return ((this.cdr as EmbeddedViewRef<any>)?.context as NgxCVA)?.formControl;
   }
-
-  constructor(
-    @Optional() private cdr: ChangeDetectorRef,
-    private linked: boolean,
-  ) {
-  }
-
-  onChange: (v?: any) => void = noop;
-  onTouched: () => void = noop;
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();
@@ -30,7 +29,6 @@ export class ValueAccessorProvider<V = any> implements ControlValueAccessor, OnD
 
     if (this.linked) {
       this.sub.add(this.linkInnerControlToOutwards());
-      this.sub.add(this.linkOutwardsToInnerControl());
     }
   }
 
@@ -38,20 +36,20 @@ export class ValueAccessorProvider<V = any> implements ControlValueAccessor, OnD
     this.onTouched = onTouched;
   }
 
-  writeValue(value: object): void {
-    this.onChanges.next(value);
+  writeValue(value: V): void {
+    this.patchValue(value);
   }
 
   protected patchValue(value: V): void {
-    this.formControl.patchValue(this.invokeSafeValue(value), { emitEvent: false });
+    this.formControl?.patchValue(this.makeSafeValue(value), { emitEvent: false });
   }
 
-  protected invokeSafeValue(value: V): V {
-    if (Array.isArray(this.formControl.value)) {
-      return (value ?? []) as V;
+  protected makeSafeValue(value: V): V {
+    if (value === null && this.formControl instanceof FormArray) {
+      return [] as unknown as V;
     }
-    if (typeof (this.formControl.value) === 'object') {
-      return (value ?? {}) as V;
+    if (value === null && this.formControl instanceof FormGroup) {
+      return {} as unknown as V;
     }
     return value;
   }
@@ -61,16 +59,6 @@ export class ValueAccessorProvider<V = any> implements ControlValueAccessor, OnD
       return this.formControl.valueChanges.subscribe(value => {
         this.onTouched();
         this.onChange(value);
-      });
-    }
-
-    return Subscription.EMPTY;
-  }
-
-  protected linkOutwardsToInnerControl(): Subscription {
-    if (this.formControl) {
-      return this.onChanges.subscribe(value => {
-        this.formControl.patchValue(value, { emitEvent: false });
       });
     }
 
