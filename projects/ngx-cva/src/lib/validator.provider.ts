@@ -1,13 +1,13 @@
 import { ChangeDetectorRef, EmbeddedViewRef, Inject, Injectable, Optional } from '@angular/core';
 import { AbstractControl, FormArray, FormGroup, ValidationErrors, Validator } from '@angular/forms';
-import { NgxCVA } from './ngx-cva.interface';
+import { CVAControl } from './cva-control.interface';
 import { appendToObject } from './append-to-object';
 import { LINKED_CVA } from './linked-cva.token';
 
 @Injectable()
 export class ValidatorProvider implements Validator {
   get formControl(): AbstractControl {
-    return ((this.cdr as EmbeddedViewRef<any>)?.context as NgxCVA)?.formControl;
+    return ((this.cdr as EmbeddedViewRef<any>)?.context as CVAControl)?.formControl;
   }
 
   constructor(
@@ -16,7 +16,7 @@ export class ValidatorProvider implements Validator {
   ) {
   }
 
-  validate(x): ValidationErrors | null {
+  validate(): ValidationErrors | null {
     if (!this.linked) {
       return null;
     }

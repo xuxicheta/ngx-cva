@@ -4,7 +4,7 @@ import { ValueAccessorProvider } from './value-accessor.provider';
 import { ValidatorProvider } from './validator.provider';
 import { LINKED_CVA } from './linked-cva.token';
 
-export function ngxCVA(linked = true): Provider[] {
+export function cvaProviders(linked = true): Provider[] {
   return [
     {
       provide: LINKED_CVA,

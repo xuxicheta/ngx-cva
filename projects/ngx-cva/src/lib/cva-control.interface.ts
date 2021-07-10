@@ -1,5 +1,5 @@
 import { AbstractControl } from '@angular/forms';
 
-export interface NgxCVA {
+export interface CVAControl {
   formControl: AbstractControl;
 }

@@ -1,4 +1,5 @@
 import { Component, Inject } from '@angular/core';
+import { cvaProviders } from './ngx-cva';
 import { CVAControl } from './cva-control.interface';
 import {
   ControlValueAccessor,
@@ -10,9 +11,8 @@ import {
   ReactiveFormsModule,
   Validators
 } from '@angular/forms';
-import { cvaProviders } from './ngx-cva';
-import { MockBuilder, MockedComponentFixture, MockRender } from 'ng-mocks';
 import { ValidatorProvider } from './validator.provider';
+import { MockBuilder, MockedComponentFixture, MockRender, ngMocks } from 'ng-mocks';
 
 @Component({
   selector: 'cva-control',
@@ -63,11 +63,11 @@ export class CvaGroupComponent implements CVAControl {
   });
 }
 
-describe.only('ValidatorProvider', () => {
-
+describe.only('ValueAccessorProvider', () => {
   describe('outer control', () => {
     let fixture: MockedComponentFixture<CvaControlComponent, { outerControl: FormControl }>;
     let outerControl: FormControl;
+    let innerControl: FormControl;
 
     beforeEach(() => MockBuilder(CvaControlComponent).keep(ReactiveFormsModule));
 
@@ -76,22 +76,23 @@ describe.only('ValidatorProvider', () => {
       fixture = MockRender('<cva-control [formControl]="outerControl"></cva-control>', {
         outerControl,
       });
+      innerControl = ngMocks.find(CvaControlComponent).componentInstance.formControl;
     });
 
-    it('outer control should have error same as inner control', async () => {
-      fixture.detectChanges();
-      expect(outerControl.errors).toEqual({ required: true });
+    it('outer control should set inner control value', async () => {
+      outerControl.setValue('xxx');
+      expect(innerControl.value).toEqual('xxx');
     });
 
-    it('outer control should remove error when control set', async () => {
-      outerControl.setValue('x');
-      fixture.detectChanges();
-      expect(outerControl.errors).toBeNull();
+    it('inner control should set outer control value', async () => {
+      innerControl.setValue('xxx');
+      expect(outerControl.value).toEqual('xxx');
     });
   });
 
   describe('outer ngModel', () => {
-    let fixture: MockedComponentFixture<CvaControlComponent, { model: any }>;
+    let fixture: MockedComponentFixture<CvaControlComponent, { outerModel: any }>;
+    let innerControl: FormControl;
 
     beforeEach(() => MockBuilder(CvaControlComponent)
       .keep(FormsModule)
@@ -99,28 +100,31 @@ describe.only('ValidatorProvider', () => {
 
     beforeEach(() => {
       fixture = MockRender(
-        '<cva-control [ngModel]="model" #field="ngModel" [class.required]="field.errors?.required"></cva-control>',
+        '<cva-control [(ngModel)]="outerModel"></cva-control>',
         {
-          model: undefined,
-        });
+          outerModel: undefined,
+        }
+      );
+      innerControl = ngMocks.find(CvaControlComponent).componentInstance.formControl;
     });
 
-    it('outer ngModel should have error same as inner control', async () => {
-      expect(fixture.nativeElement.querySelector('.required')).toBeDefined();
-    });
-
-    it('outer ngModel should remove error when ngModel set', async () => {
-      fixture.componentInstance.model = 'x';
+    it('outer ngModel should set inner control value', async () => {
+      fixture.componentInstance.outerModel = 88;
       fixture.detectChanges();
       await fixture.whenStable();
-      fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('.required')).toBeNull();
+      expect(innerControl.value).toBe(88);
+    });
+
+    it('inner control should set outer ngModel', async () => {
+      innerControl.setValue(105);
+      expect(fixture.componentInstance.outerModel).toBe(105);
     });
   });
 
   describe('outer form group', () => {
-    let fixture: MockedComponentFixture<CvaControlComponent, { formGroup: FormGroup }>;
-    let formGroup: FormGroup;
+    let fixture: MockedComponentFixture<CvaControlComponent, { outerGroup: FormGroup }>;
+    let outerGroup: FormGroup;
+    let innerControl: FormControl;
 
 
     beforeEach(() => MockBuilder(CvaControlComponent)
@@ -128,33 +132,33 @@ describe.only('ValidatorProvider', () => {
       .keep(ReactiveFormsModule));
 
     beforeEach(() => {
-      formGroup = new FormGroup({
+      outerGroup = new FormGroup({
         name: new FormControl(),
       });
       fixture = MockRender(
-        '<form [formGroup]="formGroup"><cva-control formControlName="name"></cva-control></form>',
+        '<form [formGroup]="outerGroup"><cva-control formControlName="name"></cva-control></form>',
         {
-          formGroup,
-        });
+          outerGroup,
+        }
+      );
+      innerControl = ngMocks.find(CvaControlComponent).componentInstance.formControl;
     });
 
-    it('outer group should have error same as inner control', () => {
-      fixture.detectChanges();
-      expect(formGroup.get('name').errors).toEqual({ required: true });
-      expect(formGroup.invalid).toBeTruthy();
+    it('outer group should set inner control value', () => {
+      outerGroup.setValue({ name: 'ok ok' });
+      expect(innerControl.value).toBe('ok ok');
     });
 
-    it('outer group should remove error when group.name set', () => {
-      formGroup.patchValue({ name: 'x' });
-      fixture.detectChanges();
-      expect(formGroup.get('name').errors).toBeNull();
-      expect(formGroup.valid).toBeTruthy();
+    it('inner control should set outer group', () => {
+      innerControl.setValue('toto');
+      expect(outerGroup.get('name').value).toBe('toto');
     });
   });
 
   describe('inner array', () => {
     let fixture: MockedComponentFixture<CvaArrayComponent, { outerControl: FormControl }>;
     let outerControl: FormControl;
+    let innerArray: FormArray;
 
     beforeEach(() => MockBuilder(CvaArrayComponent).keep(ReactiveFormsModule));
 
@@ -163,29 +167,27 @@ describe.only('ValidatorProvider', () => {
       fixture = MockRender('<cva-array [formControl]="outerControl"></cva-array>', {
         outerControl,
       });
+      innerArray = ngMocks.find(CvaArrayComponent).componentInstance.formControl;
     });
 
-    it('should have errors when inner form array have errors', () => {
-      expect(outerControl.errors).toEqual({
-        controlErrors: [
-          { required: true },
-          { required: true },
-          { min: { actual: 2, min: 10 } },
-          null,
-        ]
-      });
+    it('outer control should set inner form array ', () => {
+      outerControl.setValue([99, 999, 9999, 8]);
+      expect(innerArray.controls.length).toBe(4);
+      expect(innerArray.value).toEqual([99, 999, 9999, 8]);
     });
 
-    it('should have no errors when inner form array have no errors', async () => {
-      // fixture.detectChanges();
-      outerControl.setValue([1, true, 20, 'x']);
-      expect(outerControl.errors).toBeNull();
+    it('inner form array should set outer control', async () => {
+      innerArray.controls[0].setValue(5);
+      innerArray.controls[1].setValue(50);
+      innerArray.controls[2].setValue(150);
+      expect(outerControl.value).toEqual([5, 50, 150, null]);
     });
   });
 
   describe('inner form group', () => {
     let fixture: MockedComponentFixture<CvaGroupComponent, { outerControl: FormControl }>;
     let outerControl: FormControl;
+    let innerGroup: FormGroup;
 
     beforeEach(() => MockBuilder(CvaGroupComponent).keep(ReactiveFormsModule));
 
@@ -194,17 +196,20 @@ describe.only('ValidatorProvider', () => {
       fixture = MockRender('<cva-group [formControl]="outerControl"></cva-group>', {
         outerControl,
       });
+      innerGroup = ngMocks.find(CvaGroupComponent).componentInstance.formControl;
     });
 
-    it('should have errors when inner form group have errors', () => {
-      expect(outerControl.errors).toEqual({
-        controlErrors: {
-          first: { required: true },
-          second: { required: true },
-          third: { min: { actual: 2, min: 10 } },
-          fourth: null,
-        },
-      });
+    it('outer control should set inner form group ', () => {
+      outerControl.setValue({ first: 1, second: 2, third: 8 });
+      expect(innerGroup.value).toEqual({ first: 1, second: 2, third: 8, fourth: null });
+    });
+
+    it('inner form group should set outer control', async () => {
+      innerGroup.controls.first.setValue(5);
+      innerGroup.controls.second.setValue(50);
+      innerGroup.controls.third.setValue(150);
+      expect(outerControl.value).toEqual({ first: 5, second: 50, third: 150, fourth: null });
     });
   });
+
 });

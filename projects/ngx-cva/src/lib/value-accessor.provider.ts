@@ -1,7 +1,7 @@
 import { AbstractControl, ControlValueAccessor, FormArray, FormGroup } from '@angular/forms';
 import { noop, Subscription } from 'rxjs';
 import { ChangeDetectorRef, EmbeddedViewRef, Inject, Injectable, OnDestroy, Optional } from '@angular/core';
-import { NgxCVA } from './ngx-cva.interface';
+import { CVAControl } from './cva-control.interface';
 import { LINKED_CVA } from './linked-cva.token';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class ValueAccessorProvider<V = any> implements ControlValueAccessor, OnD
   }
 
   get formControl(): AbstractControl {
-    return ((this.cdr as EmbeddedViewRef<any>)?.context as NgxCVA)?.formControl;
+    return ((this.cdr as EmbeddedViewRef<any>)?.context as CVAControl)?.formControl;
   }
 
   ngOnDestroy(): void {
