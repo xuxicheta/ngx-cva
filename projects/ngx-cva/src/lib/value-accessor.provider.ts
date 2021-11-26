@@ -37,11 +37,19 @@ export class ValueAccessorProvider<V = any> implements ControlValueAccessor, OnD
   }
 
   writeValue(value: V): void {
-    this.patchValue(value);
+    this.patchValue(this.convertInput(value));
   }
 
   protected patchValue(value: V): void {
-    this.formControl?.patchValue(this.makeSafeValue(value), { emitEvent: false });
+    this.formControl?.patchValue(this.makeSafeValue(this.convertInput(value)), { emitEvent: false });
+  }
+
+  protected convertOutput(value: any): V {
+    return value;
+  }
+
+  protected convertInput(value: V): any {
+    return value;
   }
 
   protected makeSafeValue(value: V): V {
@@ -58,10 +66,16 @@ export class ValueAccessorProvider<V = any> implements ControlValueAccessor, OnD
     if (this.formControl) {
       return this.formControl.valueChanges.subscribe(value => {
         this.onTouched();
-        this.onChange(value);
+        this.onChange(this.convertOutput(value));
       });
     }
 
     return Subscription.EMPTY;
+  }
+
+  setDisabledState(disabled: boolean) {
+    disabled
+      ? this.formControl.disable()
+      : this.formControl.enable();
   }
 }
